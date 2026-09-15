@@ -1,0 +1,51 @@
+# =============================================================
+# VARIANTE B — "Evento de promociones, demanda concentrada"
+#              (estresa el POST / ASR 2)
+#
+# Hipótesis que valida: el % de error del POST /logistics/pedidos NO se
+# degrada por volumen de datos sino por CONCURRENCIA sobre el camino de
+# escritura — pool de conexiones de pg en su default (10, porque
+# database.providers.ts no lo configura) + inserción transaccional de
+# pedido + N ítems + el lookup TiendaService.exists().
+# Por eso esta variante deja la superficie de LECTURA deliberadamente
+# pequeña (pocos productos, pocos catálogos, poca disponibilidad_zona) y
+# concentra la demanda en 2 de 8 tiendas: si ASR2 igual se rompe, el
+# cuello de botella es el pool/event loop y no el tamaño de las tablas.
+#
+# Contraste con la variante A: A tiene surtido ancho e histórico profundo
+# repartido en 5 zonas; B tiene surtido angosto y toda la demanda apretada
+# en la tienda cabeza bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb (la de JMeter).
+#
+# Nota: pedidos.identificador NO tiene índice único, así que JMeter puede
+# reenviar el mismo body N veces sin provocar errores de duplicado.
+# =============================================================
+load:
+  # --- Dimensiones del negocio ---
+  tiendas: 8               # solo las tiendas que participan del evento
+  zonas: 3
+
+  distribucion:
+    tipo: pareto
+    peso_cabeza: 0.9       # 90% de la actividad en la cabeza (concentración de evento)
+    fraccion_cabeza: 0.25  # la cabeza son 2 tiendas (25% de 8) -> ~45% cada una
+
+  # --- Logística --- (superficie de lectura angosta, destino de escritura grande)
+  productos: 600               # surtido acotado del evento promocional
+  catalogos: 40
+  catalogos_productos: 6000
+  promociones: 1200            # evento: muchas promos, ~70% vigentes hoy
+  pedidos: 40000               # ~18.000 en la tienda cabeza (45%), ~700 en cada tienda de la cola
+  items_pedido: 160000         # ~4 ítems por pedido; deliberadamente << que en A
+  despachos: 10000
+  disponibilidad_zona: 12000   # angosto a proposito (contraste con A)
+  notas_credito: 1200
+
+  # --- Inventario ---
+  items_inventario: 3000
+  registros_compra_producto_tienda: 6000
+  registros_venta_producto_tienda: 6000
+
+  # --- Ventas ---
+  productos_externos: 600
+  ventas: 3000
+  items_venta: 9000

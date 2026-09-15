@@ -1,48 +1,46 @@
+# =============================================================
+# VARIANTE A — "Histórico profundo por zona"  (estresa el GET / ASR 1)
+#
+# Hipótesis que valida: la latencia p99 del GET
+# /logistics/tenderos/productos-disponibles crece con el VOLUMEN DE
+# HISTÓRICO de la tienda consultada y de su zona —no con la concurrencia—
+# porque las tres subconsultas EXISTS recorren pedidos, items_pedido,
+# promociones y disponibilidad_zona sin índices sobre pedidos."tiendaId",
+# items_pedido."productoId", catalogos.zona ni disponibilidad_zona."productoId".
+# Si el ASR1 se rompe antes con esta variante que con la B, el cuello de
+# botella es la lectura y no la concurrencia.
+#
+# Concentración: 4 de 20 tiendas (20%) acumulan el 80% de la actividad.
+# La tienda cabeza es bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb (la de JMeter)
+# y la zona cabeza es "Zona Norte" (la de JMeter).
+# =============================================================
 load:
-  # =============================================================
-  # VALORES PLACEHOLDER — NO son un escenario de prueba válido.
-  #
-  # Estos números son arbitrarios y uniformes: sirven solo para que
-  # la app arranque y el seeder funcione. Antes de ejecutar el
-  # laboratorio DEBE reemplazarlos por su propio diseño de datos,
-  # justificado con el contexto de Cheapest (ver lab_2_warmup.md y
-  # el entregable 1). Un diseño realista NO es uniforme: hay tiendas
-  # que compran mucho más que otras, zonas con más actividad y
-  # productos más populares (distribución tipo Pareto).
-  # =============================================================
-
   # --- Dimensiones del negocio ---
-  tiendas: 5          # placeholder — ¿cuántas tiendas modela su ciudad?
-  zonas: 3            # placeholder — ¿cuántas zonas y cuál es la "cabeza"?
+  tiendas: 20
+  zonas: 5
 
-  # Distribución de la actividad sobre tiendas/zonas/productos.
-  # Sin esta llave el seeder reparte todo de forma uniforme (round-robin).
-  # Descoméntela y ajústela para modelar la concentración real:
-  # distribucion:
-  #   tipo: pareto
-  #   peso_cabeza: 0.8       # fracción de la actividad que cae en la cabeza
-  #   fraccion_cabeza: 0.2   # tamaño de la cabeza respecto del pool
-  # Para 200 pedidos
-  # el 80% de actividad (160 pedidos) van a asignarse a Tienda "cabeza" 
-  # el 20% de actividad (40 pedidos) van a asignarse a Tiendas "cola"
+  distribucion:
+    tipo: pareto
+    peso_cabeza: 0.8       # 80% de la actividad cae en la cabeza
+    fraccion_cabeza: 0.2   # la cabeza son 4 tiendas (20% de 20)
 
-  # --- Logística ---  (placeholders — ajuste cada conteo y su razón)
-  productos: 100
-  catalogos: 10
-  catalogos_productos: 200
-  promociones: 20
-  pedidos: 200
-  items_pedido: 400
-  despachos: 100
-  disponibilidad_zona: 200
-  notas_credito: 20
+  # --- Logística --- (catálogo ancho + histórico profundo)
+  productos: 5000              # multiplicador del GET: el scan externo recorre esta tabla
+  catalogos: 400               # 5 zonas; "Zona Norte" concentra el 80%
+  catalogos_productos: 40000   # ~100 productos por catálogo
+  promociones: 3000            # ~70% vigentes hoy (el seeder deja 30% como histórico vencido)
+  pedidos: 150000              # histórico: ~30.000 pedidos en la tienda cabeza
+  items_pedido: 600000         # ~4 ítems por pedido — es el seq scan dominante del GET
+  despachos: 40000
+  disponibilidad_zona: 150000  # ~375 filas por catálogo — segundo seq scan dominante
+  notas_credito: 3000
 
-  # --- Inventario ---
-  items_inventario: 100
-  registros_compra_producto_tienda: 100
-  registros_venta_producto_tienda: 100
+  # --- Inventario --- (no lo toca el GET; volumen realista de acompañamiento)
+  items_inventario: 20000
+  registros_compra_producto_tienda: 40000
+  registros_venta_producto_tienda: 40000
 
   # --- Ventas ---
-  productos_externos: 30
-  ventas: 100
-  items_venta: 200
+  productos_externos: 3000
+  ventas: 20000
+  items_venta: 60000

@@ -173,6 +173,15 @@ export class DatabaseSeederService implements OnModuleInit {
       );
 
       await queryRunner.commitTransaction();
+
+      // ANALYZE despues del commit (fuera de la transaccion): recien sembrada
+      // la BD, pg_statistic esta vacio y el planner elige planes malos para el
+      // GET de ASR1 (se midieron ~1900 ms vs ~20 ms con estadisticas frescas)
+      // hasta que autovacuum alcanza a analizar. Sin esto, las primeras
+      // corridas de la prueba de carga miden el plan equivocado.
+      this.logger.log('Refreshing planner statistics (ANALYZE).');
+      await this.dataSource.query('ANALYZE');
+
       this.logger.log('✅ Database seeded successfully.');
     } catch (error) {
       await queryRunner.rollbackTransaction();

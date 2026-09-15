@@ -1,0 +1,46 @@
+# =============================================================
+# VARIANTE A — "Histórico profundo por zona"  (estresa el GET / ASR 1)
+#
+# Hipótesis que valida: la latencia p99 del GET
+# /logistics/tenderos/productos-disponibles crece con el VOLUMEN DE
+# HISTÓRICO de la tienda consultada y de su zona —no con la concurrencia—
+# porque las tres subconsultas EXISTS recorren pedidos, items_pedido,
+# promociones y disponibilidad_zona sin índices sobre pedidos."tiendaId",
+# items_pedido."productoId", catalogos.zona ni disponibilidad_zona."productoId".
+# Si el ASR1 se rompe antes con esta variante que con la B, el cuello de
+# botella es la lectura y no la concurrencia.
+#
+# Concentración: 4 de 20 tiendas (20%) acumulan el 80% de la actividad.
+# La tienda cabeza es bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb (la de JMeter)
+# y la zona cabeza es "Zona Norte" (la de JMeter).
+# =============================================================
+load:
+  # --- Dimensiones del negocio ---
+  tiendas: 20
+  zonas: 5
+
+  distribucion:
+    tipo: pareto
+    peso_cabeza: 0.8       # 80% de la actividad cae en la cabeza
+    fraccion_cabeza: 0.2   # la cabeza son 4 tiendas (20% de 20)
+
+  # --- Logística --- (catálogo ancho + histórico profundo)
+  productos: 5000              # multiplicador del GET: el scan externo recorre esta tabla
+  catalogos: 400               # 5 zonas; "Zona Norte" concentra el 80%
+  catalogos_productos: 40000   # ~100 productos por catálogo
+  promociones: 3000            # ~70% vigentes hoy (el seeder deja 30% como histórico vencido)
+  pedidos: 150000              # histórico: ~30.000 pedidos en la tienda cabeza
+  items_pedido: 600000         # ~4 ítems por pedido — es el seq scan dominante del GET
+  despachos: 40000
+  disponibilidad_zona: 150000  # ~375 filas por catálogo — segundo seq scan dominante
+  notas_credito: 3000
+
+  # --- Inventario --- (no lo toca el GET; volumen realista de acompañamiento)
+  items_inventario: 20000
+  registros_compra_producto_tienda: 40000
+  registros_venta_producto_tienda: 40000
+
+  # --- Ventas ---
+  productos_externos: 3000
+  ventas: 20000
+  items_venta: 60000
