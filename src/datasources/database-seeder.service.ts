@@ -110,6 +110,9 @@ export class DatabaseSeederService implements OnModuleInit {
       const counts = this.loadSeedCounts();
       this.logger.log(`Top-up targets: ${JSON.stringify(counts)}`);
 
+      // Debe ir primero: logistica valida la tienda contra esta tabla.
+      await this.seedTiendas(queryRunner);
+
       const productoIds = await this.seedProductos(
         queryRunner,
         counts.productos,
@@ -345,6 +348,46 @@ export class DatabaseSeederService implements OnModuleInit {
   // Per-table seeders
   // ---------------------------------------------------------------
 
+  /**
+   * Seed del pool de tiendas (subdominio identificacion).
+   * Debe correr antes que el resto de tablas: CatalogoService y PedidoService
+   * validan la existencia de la tienda contra esta tabla via
+   * TiendaService.exists(), de modo que un pool sin filas hace fallar el POST
+   * /logistics/pedidos con 400. El pool se toma de `effectiveTiendaIds`, que
+   * ya incluye las dos tiendas fijas de seed.sql mas las extra de
+   * `tiendas` en load-seed.yaml.
+   */
+  private async seedTiendas(queryRunner: QueryRunner): Promise<void> {
+    const existingIds = new Set(await this.getIds(queryRunner, 'tiendas'));
+    const missing = this.effectiveTiendaIds
+      .map((id, index) => ({ id, index }))
+      .filter(({ id }) => !existingIds.has(id));
+
+    if (missing.length === 0) return;
+
+    const zonas = this.zonaNames ?? this.zonaBaseNames;
+
+    await this.batchInsert(
+      queryRunner,
+      'INSERT INTO tiendas (id, "codigoInterno", nombre, direccion, zona, rut) VALUES',
+      missing.map(({ id, index }) => {
+        const seq = index + 1;
+        return [
+          id,
+          `TIENDA-${String(seq).padStart(4, '0')}`,
+          `Tienda ${seq}`,
+          `Calle ${seq} # ${seq * 10}-${seq}`,
+          this.pickAssigned(zonas, index),
+          `76.${String(100 + seq).padStart(3, '0')}.${String(1000 + seq).slice(-3)}-${seq % 10}`,
+        ];
+      }),
+    );
+
+    this.logger.log(
+      `Seeded ${missing.length} tiendas (pool efectivo: ${this.effectiveTiendaIds.length}).`,
+    );
+  }
+
   private async seedProductos(
     queryRunner: QueryRunner,
     targetCount: number,
@@ -397,8 +440,10 @@ export class DatabaseSeederService implements OnModuleInit {
       insertedIds.map((id, index) => [
         id,
         this.pickAssigned(this.effectiveTiendaIds, startIndex + index),
-        '2026-01-01 00:00:00',
-        '2026-12-31 23:59:59',
+        // Relativo a NOW: un catalogo con vigencia absoluta caduca y deja el
+        // GET de ASR1 devolviendo vacio sin que nada falle visiblemente.
+        this.daysAgo(30),
+        this.daysFromNow(335),
         this.zonaNames
           ? this.pickAssigned(this.zonaNames, startIndex + index)
           : `Zona Load ${startIndex + index + 1}`,

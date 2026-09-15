@@ -6,11 +6,11 @@ export default async () => {
 
   // Create a data source to drop and recreate the schema before tests
   const dataSource = new DataSource({
-    type: 'mysql',
+    type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '3306', 10),
-    username: process.env.DB_USERNAME || 'root',
-    password: process.env.DB_PASSWORD || 'root',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    username: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'cheapest',
     entities: [__dirname + '/../src/**/*.entity{.ts,.js}'],
   });
@@ -18,13 +18,9 @@ export default async () => {
   try {
     await dataSource.initialize();
 
-    // Drop all tables
+    // Drop all tables. El esquema se recrea al arrancar la app gracias a
+    // synchronize: true, y DatabaseSeederService vuelve a sembrar los datos.
     await dataSource.dropDatabase();
-
-    // Recreate database
-    await dataSource.query(
-      `CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'cheapest'}\``,
-    );
 
     await dataSource.destroy();
   } catch (error) {

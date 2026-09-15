@@ -3,6 +3,13 @@
 -- All UUIDs are fixed so e2e tests can rely on them.
 -- =============================================================
 
+-- Tiendas (Identificacion)
+-- Van primero: logistica valida la existencia de la tienda contra esta tabla
+-- (TiendaService.exists) antes de crear catalogos y pedidos.
+INSERT INTO tiendas (id, "codigoInterno", nombre, direccion, zona, rut, "createdAt", "updatedAt") VALUES
+('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'TIENDA-001', 'Tienda Central', 'Calle Principal 123', 'Zona Norte', '76.123.456-7', NOW(), NOW()),
+('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbc', 'TIENDA-002', 'Tienda Sur', 'Boulevard Sur 789', 'Zona Sur', '76.234.567-8', NOW(), NOW());
+
 -- Items de Inventario
 INSERT INTO items_inventario (id, "productoId", "tiendaId", cantidad, "precioVenta", "monedaId", "createdAt", "updatedAt") VALUES
 ('11111111-1111-4111-8111-111111111111', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 100, 25.50, '550e8400-e29b-41d4-a716-446655440000', NOW(), NOW()),
@@ -37,8 +44,8 @@ INSERT INTO productos (id, "codigoInterno", "codigoBarras", nombre, marca, categ
 
 -- Catálogos
 INSERT INTO catalogos (id, "tiendaId", "vigenciaDesde", "vigenciaHasta", zona, "createdAt", "updatedAt") VALUES
-('ca711111-1111-4111-8111-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '2026-02-01 00:00:00', '2026-12-31 23:59:59', 'Zona Norte', NOW(), NOW()),
-('ca722222-2222-4222-8222-222222222222', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbc', '2026-02-01 00:00:00', '2026-12-31 23:59:59', 'Zona Sur', NOW(), NOW());
+('ca711111-1111-4111-8111-111111111111', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 'Zona Norte', NOW(), NOW()),
+('ca722222-2222-4222-8222-222222222222', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbc', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 'Zona Sur', NOW(), NOW());
 
 -- Catálogo–Producto junction
 INSERT INTO "catalogos_productos_productos" ("catalogosId", "productosId") VALUES
@@ -50,8 +57,10 @@ INSERT INTO "catalogos_productos_productos" ("catalogosId", "productosId") VALUE
 
 -- Promociones
 INSERT INTO promociones (id, nombre, "precioPromocional", "monedaId", "productoId", inicio, fin, restricciones, "createdAt", "updatedAt") VALUES
-('f0a11111-1111-4111-8111-111111111111', 'Promoción Producto 1', 20.00, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '2026-02-01 00:00:00', '2026-02-28 23:59:59', 100, NOW(), NOW()),
-('f0a22222-2222-4222-8222-222222222222', 'Promoción Producto 2', 12.00, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab', '2026-02-01 00:00:00', '2026-02-28 23:59:59', 50, NOW(), NOW());
+-- Ventana relativa a NOW: con fechas absolutas la promocion caduca y el GET
+-- de ASR1 devuelve vacio sin error visible (bug observado en el Lab 1).
+('f0a11111-1111-4111-8111-111111111111', 'Promoción Producto 1', 20.00, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 100, NOW(), NOW()),
+('f0a22222-2222-4222-8222-222222222222', 'Promoción Producto 2', 12.00, 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 50, NOW(), NOW());
 
 -- Promocion Tiendas
 INSERT INTO promocion_tiendas (id, "promocionId", "tiendaId") VALUES

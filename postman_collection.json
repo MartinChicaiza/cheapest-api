@@ -1,10 +1,9 @@
 {
   "info": {
-    "_postman_id": "0439267b-5abd-482f-bccd-c086d1d14017",
+    "_postman_id": "16e9d70e-cfa2-4c2d-aca9-b80013f04aab",
     "name": "Cheapest API - Complete Collection",
     "description": "Complete collection for testing all Cheapest API endpoints including Inventory, Logistics, and Sales",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "29659642"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
@@ -489,6 +488,45 @@
     {
       "name": "Logistics",
       "item": [
+        {
+          "name": "Tendero",
+          "item": [
+            {
+              "name": "Get Productos Disponibles",
+              "id": "bb67bbf4-9fe0-4327-9a30-6ff756395a02",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/logistics/tenderos/productos-disponibles?tiendaId={{tienda_id}}&zona=Zona Norte",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "logistics",
+                    "tenderos",
+                    "productos-disponibles"
+                  ],
+                  "query": [
+                    {
+                      "key": "tiendaId",
+                      "value": "{{tienda_id}}",
+                      "description": "Filter by store ID"
+                    },
+                    {
+                      "key": "zona",
+                      "value": "Zona Norte",
+                      "description": "Filter by catalog zone"
+                    }
+                  ]
+                },
+                "description": "Get available products for a store and zone using the current tendero endpoint path."
+              },
+              "response": []
+            }
+          ],
+          "id": "7e6de2b8-dd13-4f7c-8c3e-0cebb75f9c3c"
+        },
         {
           "name": "Catalogos",
           "item": [
