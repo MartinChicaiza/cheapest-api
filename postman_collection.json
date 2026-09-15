@@ -521,12 +521,13 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{base_url}}/%20%20%20/productos-disponibles?tiendaId={{tienda_id}}&zona=Zona Norte",
+                  "raw": "{{base_url}}/logistics/tenderos/productos-disponibles?tiendaId={{tienda_id}}&zona=Zona Norte",
                   "host": [
                     "{{base_url}}"
                   ],
                   "path": [
-                    "%20%20%20",
+                    "logistics",
+                    "tenderos",
                     "productos-disponibles"
                   ],
                   "query": [

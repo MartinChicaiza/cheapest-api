@@ -39,8 +39,11 @@ export class DatabaseSeederService implements OnModuleInit {
 
       const id = (key: string) => this.generateSeededUuid(key);
       const seededIds = {
-        tienda1: id('tiendas:1'),
-        tienda2: id('tiendas:2'),
+        // IDs fijos (no derivados del namespace): los specs e2e de logistica,
+        // inventario y ventas referencian tienda1 por este UUID literal, y las
+        // pruebas de carga necesitan IDs estables y conocidos de antemano.
+        tienda1: '9a2f2e7b-40c4-4c5f-a37c-baf722e18ab9',
+        tienda2: '9a2f2e7b-40c4-4c5f-a37c-baf722e18aba',
         itemInventario1: id('items-inventario:1'),
         itemInventario2: id('items-inventario:2'),
         itemInventario3: id('items-inventario:3'),
@@ -68,6 +71,7 @@ export class DatabaseSeederService implements OnModuleInit {
         promocionTienda1: id('promocion-tiendas:1'),
         promocionTienda2: id('promocion-tiendas:2'),
         promocionTienda3: id('promocion-tiendas:3'),
+        promocionTienda4: id('promocion-tiendas:4'),
         pedido1: id('pedidos:1'),
         pedido2: id('pedidos:2'),
         itemPedido1: id('items-pedido:1'),
@@ -81,6 +85,16 @@ export class DatabaseSeederService implements OnModuleInit {
         disponibilidadZona4: id('disponibilidad-zona:4'),
         notaCredito1: id('notas-credito:1'),
       };
+
+      // ============================================
+      // Seed Tiendas (Identificacion)
+      // Deben ir primero: el resto de las entidades referencian su id.
+      // ============================================
+      await this.dataSource.query(`
+        INSERT INTO tiendas (id, "codigoInterno", nombre, direccion, zona, rut, "createdAt", "updatedAt") VALUES
+        ('${seededIds.tienda1}', 'TIENDA-001', 'Tienda Central', 'Calle Principal 123', 'Zona Norte', '76.123.456-7', NOW(), NOW()),
+        ('${seededIds.tienda2}', 'TIENDA-002', 'Tienda Sur', 'Boulevard Sur 789', 'Zona Sur', '76.234.567-8', NOW(), NOW())
+      `);
 
       // ============================================
       // Seed Items de Inventario
@@ -135,8 +149,8 @@ export class DatabaseSeederService implements OnModuleInit {
       // ============================================
       await this.dataSource.query(`
         INSERT INTO catalogos (id, "tiendaId", "vigenciaDesde", "vigenciaHasta", zona, "createdAt", "updatedAt") VALUES
-        ('${seededIds.catalogo1}', '${seededIds.tienda1}', '2026-02-01 00:00:00', '2026-12-31 23:59:59', 'Zona Norte', NOW(), NOW()),
-        ('${seededIds.catalogo2}', '${seededIds.tienda2}', '2026-02-01 00:00:00', '2026-12-31 23:59:59', 'Zona Sur', NOW(), NOW())
+        ('${seededIds.catalogo1}', '${seededIds.tienda1}', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 'Zona Norte', NOW(), NOW()),
+        ('${seededIds.catalogo2}', '${seededIds.tienda2}', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 'Zona Sur', NOW(), NOW())
       `);
 
       // ============================================
@@ -159,15 +173,16 @@ export class DatabaseSeederService implements OnModuleInit {
       // ============================================
       await this.dataSource.query(`
         INSERT INTO promociones (id, nombre, "precioPromocional", "monedaId", "productoId", inicio, fin, restricciones, "createdAt", "updatedAt") VALUES
-        ('${seededIds.promocion1}', 'Promoción Producto 1', 20.00, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '${seededIds.producto1}', '2026-02-01 00:00:00', '2026-02-28 23:59:59', 100, NOW(), NOW()),
-        ('${seededIds.promocion2}', 'Promoción Producto 2', 12.00, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '${seededIds.producto2}', '2026-02-01 00:00:00', '2026-02-28 23:59:59', 50, NOW(), NOW())
+        ('${seededIds.promocion1}', 'Promoción Producto 1', 20.00, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '${seededIds.producto1}', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 100, NOW(), NOW()),
+        ('${seededIds.promocion2}', 'Promoción Producto 2', 12.00, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '${seededIds.producto2}', NOW() - INTERVAL '30 days', NOW() + INTERVAL '335 days', 50, NOW(), NOW())
       `);
 
       await this.dataSource.query(`
         INSERT INTO promocion_tiendas (id, "promocionId", "tiendaId") VALUES
         ('${seededIds.promocionTienda1}', '${seededIds.promocion1}', '${seededIds.tienda1}'),
         ('${seededIds.promocionTienda2}', '${seededIds.promocion2}', '${seededIds.tienda1}'),
-        ('${seededIds.promocionTienda3}', '${seededIds.promocion2}', '${seededIds.tienda2}')
+        ('${seededIds.promocionTienda3}', '${seededIds.promocion2}', '${seededIds.tienda2}'),
+        ('${seededIds.promocionTienda4}', '${seededIds.promocion1}', '${seededIds.tienda2}')
       `);
 
       // ============================================
